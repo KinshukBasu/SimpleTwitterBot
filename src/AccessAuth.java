@@ -30,7 +30,8 @@ public class AccessAuth {
 
         System.out.println("Connecting database...");
 
-        try (Connection connection = DriverManager.getConnection(url, username, password)) {
+        try{
+            Connection connection = DriverManager.getConnection(url, username, password);
             System.out.println("Database connected!");
             return connection;
         } catch (SQLException e) {
@@ -38,37 +39,103 @@ public class AccessAuth {
         }
     }
 
-    public void login() throws Exception{
+    private AccessToken retrieveLoginFromDB() throws Exception {
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+        String username = new String();
+        String password = new String();
+        String db_password;
+        AccessToken accessToken = null;
+
+        try {
+            conn = this.establishConnection();
+            System.out.println(conn.isClosed());
+            pstmt = conn.prepareStatement("SELECT * FROM TEMP WHERE USERNAME = ? LIMIT 1");
+
+
+            do {
+                System.out.println("Enter username : ");
+                username = br.readLine();
+            } while (username.length() <= 0);
+
+            pstmt.setString(1, username);
+            rs = pstmt.executeQuery();
+
+            if (!rs.next()) {
+                System.out.println("Username not found in DB");
+                return null;
+            } else {
+                db_password = rs.getString("password");
+
+                for (int i = 0; i < 3; i++) {
+                    System.out.println("Enter password : ");
+                    password = br.readLine();
+                    if (password == db_password) {
+                        System.out.println("Login successful");
+                        String token = rs.getString("token");
+                        String tokensecret = rs.getString("tokensecret");
+                        return new AccessToken(token, tokensecret);
+
+                    } else {
+                        System.out.println("Incorrect password");
+                    }
+                }
+                return null;
+            }
+
+        } catch (IllegalStateException e) {
+            System.out.println("Could not reach database");
+        } catch (Exception e) {
+            System.out.println(e);
+        } finally {
+            System.out.println("In the finally block!");
+            if (rs != null) try {
+                rs.close();
+            } catch (SQLException logOrIgnore) {
+            }
+            if (pstmt != null) try {
+                pstmt.close();
+            } catch (SQLException logOrIgnore) {
+            }
+            if (conn != null) try {
+                conn.close();
+            } catch (SQLException logOrIgnore) {
+            }
+        }
+
+        return null;
+    }
+
+
+
+
+    public Twitter login() throws Exception{
 
         Twitter twitter = TwitterFactory.getSingleton();
         twitter.setOAuthConsumer(APIkey, APIsecret);
 
-        Connection DBconnection;
+
         AccessToken accessToken = null;
 
-        try{
-            DBconnection = this.establishConnection();
-        } catch (IllegalStateException e){
-            System.out.println("Could not reach database");
-            return;
-        }
         //TODO : Retrieve previous data, if available
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        String username = new String();
-        String password = new String();
-
-        do {
-            System.out.println("Enter username : ");
-            username = br.readLine();
-            System.out.println("Enter password : ");
-            password = br.readLine();
-        }while (username.length()>0 && password.length()>0);
 
 
+        accessToken = this.retrieveLoginFromDB();
 
         while(null==accessToken){
             accessToken = this.externalLogin(twitter, accessToken);
         }
+        twitter.setOAuthAccessToken(accessToken);
+
+        this.storeAccessInDB(accessToken);
+
+        return twitter;
     }
 
     private AccessToken externalLogin(Twitter twitter, AccessToken accessToken) throws Exception {
@@ -98,7 +165,40 @@ public class AccessAuth {
                 }
             }
         }
+
         return(accessToken);
+    }
+
+    private void storeAccessInDB(AccessToken accessToken) throws Exception{
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+        try {
+            conn = this.establishConnection();
+            pstmt = conn.prepareStatement("INSERT INTO temp (username, password, token, tokensecret) "+"VALUES (?,?,?,?");
+
+            System.out.println("Enter password again: ");
+            String password = br.readLine();
+
+            pstmt.setString (1, accessToken.getScreenName());
+            pstmt.setString(2,password);
+            pstmt.setString(3,accessToken.getToken());
+            pstmt.setString(4,accessToken.getTokenSecret());
+            pstmt.executeUpdate();
+        } catch (IllegalStateException e) {
+            System.out.println("Could not reach database");
+        } finally {
+
+            if (pstmt != null) try {
+                pstmt.close();
+            } catch (SQLException logOrIgnore) {
+            }
+            if (conn != null) try {
+                conn.close();
+            } catch (SQLException logOrIgnore) {
+            }
+        }
     }
 
 }
