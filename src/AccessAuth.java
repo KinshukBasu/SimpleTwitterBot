@@ -76,7 +76,7 @@ public class AccessAuth {
                 for (int i = 0; i < 3; i++) {
                     System.out.println("Enter password : ");
                     password = br.readLine();
-                    if (password == db_password) {
+                    if (password.equals(db_password)) {
                         System.out.println("Login successful");
                         String token = rs.getString("token");
                         String tokensecret = rs.getString("tokensecret");
@@ -123,18 +123,13 @@ public class AccessAuth {
 
         AccessToken accessToken = null;
 
-        //TODO : Retrieve previous data, if available
-
-
         accessToken = this.retrieveLoginFromDB();
 
-        while(null==accessToken){
+        if(null==accessToken){
             accessToken = this.externalLogin(twitter, accessToken);
+            this.storeAccessInDB(accessToken);
         }
         twitter.setOAuthAccessToken(accessToken);
-
-        this.storeAccessInDB(accessToken);
-
         return twitter;
     }
 
@@ -176,15 +171,52 @@ public class AccessAuth {
 
         try {
             conn = this.establishConnection();
-            pstmt = conn.prepareStatement("INSERT INTO temp (username, password, token, tokensecret) "+"VALUES (?,?,?,?");
+            pstmt = conn.prepareStatement("INSERT INTO temp (username, password, token, tokensecret) VALUES (?,?,?,?)");
 
             System.out.println("Enter password again: ");
             String password = br.readLine();
+
 
             pstmt.setString (1, accessToken.getScreenName());
             pstmt.setString(2,password);
             pstmt.setString(3,accessToken.getToken());
             pstmt.setString(4,accessToken.getTokenSecret());
+
+            pstmt.executeUpdate();
+        } catch (IllegalStateException e) {
+            System.out.println("Could not reach database");
+        } finally {
+
+            if (pstmt != null) try {
+                pstmt.close();
+            } catch (SQLException logOrIgnore) {
+            }
+            if (conn != null) try {
+                conn.close();
+            } catch (SQLException logOrIgnore) {
+            }
+        }
+    }
+
+    public void writeError() throws Exception{
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+        try {
+            conn = this.establishConnection();
+            pstmt = conn.prepareStatement("INSERT INTO temp (username, password, token, tokensecret) VALUES (?,?,?,?)");
+
+            /*
+            pstmt.setString (1, accessToken.getScreenName());
+            pstmt.setString(2,password);
+            pstmt.setString(3,accessToken.getToken());
+            pstmt.setString(4,accessToken.getTokenSecret());
+            */
+            pstmt.setString(1,"ab");
+            pstmt.setString(2,"ab");
+            pstmt.setString(3,"ab");
+            pstmt.setString(4,"ab");
             pstmt.executeUpdate();
         } catch (IllegalStateException e) {
             System.out.println("Could not reach database");

@@ -31,6 +31,7 @@ public class trial {
         Twitter twitter = TwitterFactory.getSingleton();
         AccessAuth auth = new AccessAuth();
         twitter = auth.login();
+        //auth.writeError();
 
 
         List<Status> statuses = twitter.getHomeTimeline();
