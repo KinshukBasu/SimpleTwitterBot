@@ -55,7 +55,7 @@ public class AccessAuth {
 
         try {
             conn = this.establishConnection();
-            System.out.println(conn.isClosed());
+
             pstmt = conn.prepareStatement("SELECT * FROM TEMP WHERE USERNAME = ? LIMIT 1");
 
 
@@ -198,39 +198,5 @@ public class AccessAuth {
         }
     }
 
-    public void writeError() throws Exception{
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-
-        try {
-            conn = this.establishConnection();
-            pstmt = conn.prepareStatement("INSERT INTO temp (username, password, token, tokensecret) VALUES (?,?,?,?)");
-
-            /*
-            pstmt.setString (1, accessToken.getScreenName());
-            pstmt.setString(2,password);
-            pstmt.setString(3,accessToken.getToken());
-            pstmt.setString(4,accessToken.getTokenSecret());
-            */
-            pstmt.setString(1,"ab");
-            pstmt.setString(2,"ab");
-            pstmt.setString(3,"ab");
-            pstmt.setString(4,"ab");
-            pstmt.executeUpdate();
-        } catch (IllegalStateException e) {
-            System.out.println("Could not reach database");
-        } finally {
-
-            if (pstmt != null) try {
-                pstmt.close();
-            } catch (SQLException logOrIgnore) {
-            }
-            if (conn != null) try {
-                conn.close();
-            } catch (SQLException logOrIgnore) {
-            }
-        }
-    }
 
 }
