@@ -22,7 +22,7 @@ import twitter4j.TwitterFactory;
 import twitter4j.auth.AccessToken;
 import twitter4j.auth.RequestToken;
 
-public class trial {
+public class Main {
 
 
 
@@ -31,15 +31,35 @@ public class trial {
         Twitter twitter = TwitterFactory.getSingleton();
         AccessAuth auth = new AccessAuth();
         twitter = auth.login();
-        //auth.writeError();
 
+        SearchFunctions search = new SearchFunctions();
 
+        /*
         List<Status> statuses = twitter.getHomeTimeline();
         System.out.println("Showing home timeline.");
         for (Status status : statuses) {
             System.out.println(status.getUser().getName() + ":" +
                     status.getText());
+            System.out.println("----------------------------------");
         }
+        */
 
+        search.searchByUsername(twitter);
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
